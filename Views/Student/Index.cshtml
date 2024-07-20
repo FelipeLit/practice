@@ -1,0 +1,40 @@
+@model IEnumerable<practice2.Models.Student>
+
+@{
+    ViewData["Title"] = "Lista de Estudiantes";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <a asp-action="ExportToExcel" asp-controller="Student" class="btn btn-primary mt-3 mb-3">Exportar a excel</a>
+    </div>
+</div>
+
+
+<h1>Lista de Estudiantes</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Edad</th>
+            <th>Curso</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var estudiante in Model)
+    {
+        <tr>
+            <td>@estudiante.Id</td>
+            <td>@estudiante.Name</td>
+            <td>@estudiante.Age</td>
+            <td>@estudiante.Course.Name</td>
+            <td>
+                <a href="@Url.Action("DownloadPdf", "Student", new { id = estudiante.Id })" class="btn btn-primary">Descargar PDF</a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

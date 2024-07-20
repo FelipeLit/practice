@@ -1,0 +1,28 @@
+@model practice2.Models.Student
+
+@{
+    ViewData["Title"] = "Crear Estudiante";
+}
+
+<h1>Crear Estudiante</h1>
+
+<form asp-action="CreateStudent" asp-controller="Student" method="post">
+    <div class="form-group">
+        <label for="Nombre">Nombre</label>
+        <input type="text" class="form-control" id="Nombre" name="Name" required />
+    </div>
+    <div class="form-group">
+        <label for="Edad">Edad</label>
+        <input type="number" class="form-control" id="Edad" name="Age" required />
+    </div>
+    <div class="form-group">
+        <label for="CursoId">Curso</label>
+        <select class="form-control" id="CursoId" name="CourseId">
+            @foreach (var curso in ViewBag.Cursos)
+            {
+                <option value="@curso.Id">@curso.Name</option>
+            }
+        </select>
+    </div>
+    <button class="btn btn-primary">Guardar</button>
+</form>
