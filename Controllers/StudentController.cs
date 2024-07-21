@@ -5,6 +5,9 @@ using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using practice2.Data;
 using practice2.Models;
+using X.PagedList.Extensions;
+using X.PagedList;
+using X.PagedList.Mvc.Core;
 
 namespace practice2.Controllers
 {
@@ -18,10 +21,16 @@ namespace practice2.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? page)
         {
-            var estudiantes = await _context.Students.Include(e => e.Course).ToListAsync();
-            return View(estudiantes);
+            var pageNumber = page ?? 1;
+            var pageSize = 10;
+
+            // Convertir la consulta a una lista antes de aplicar la paginación
+            var studentsList = await _context.Students.Include(s => s.Course).ToListAsync();
+            var studentsPagedList = studentsList.ToPagedList(pageNumber, pageSize);
+
+            return View(studentsPagedList);
         }
 
         [HttpGet]
@@ -104,6 +113,71 @@ namespace practice2.Controllers
                 return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Estudiantes.xlsx");
             }
 
+        }
+
+
+        [HttpPost]
+        public async Task<IActionResult> ImportFromExcel(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
+
+            try
+            {
+                using (var package = new ExcelPackage(file.OpenReadStream()))
+                {
+                    var worksheet = package.Workbook.Worksheets[0];
+                    int rowCount = worksheet.Dimension.Rows;
+                    int colCount = worksheet.Dimension.Columns;
+
+                    for (int row = 2; row <= rowCount; row++)
+                    {
+                        var nameCell = worksheet.Cells[row, 1].Text.Trim();
+                        var ageCell = worksheet.Cells[row, 2].Text.Trim();
+                        var courseIdCell = worksheet.Cells[row, 3].Text.Trim();
+
+                        // Debug: Check the values read from the Excel
+                        Console.WriteLine($"Row {row} - Name: '{nameCell}', Age: '{ageCell}', CourseId: '{courseIdCell}'");
+
+                        if (string.IsNullOrWhiteSpace(nameCell) || string.IsNullOrWhiteSpace(ageCell) || string.IsNullOrWhiteSpace(courseIdCell))
+                        {
+                            // Skipping row due to missing data
+                            Console.WriteLine($"Skipping row {row} due to missing data: Name='{nameCell}', Age='{ageCell}', CourseId='{courseIdCell}'");
+                            continue;
+                        }
+
+                        if (!int.TryParse(ageCell, out int age) || !int.TryParse(courseIdCell, out int courseId))
+                        {
+                            // Skipping row due to invalid data
+                            Console.WriteLine($"Skipping row {row} due to invalid data: Name='{nameCell}', Age='{ageCell}', CourseId='{courseIdCell}'");
+                            continue;
+                        }
+
+                        var estudiante = new Student
+                        {
+                            Name = nameCell,
+                            Age = age,
+                            CourseId = courseId
+                        };
+
+                        _context.Students.Add(estudiante);
+                        Console.WriteLine($"Added student: {nameCell}, Age: {age}, CourseId: {courseId}");
+                    }
+
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine("Database updated successfully");
+                }
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (you can use a logging framework for this)
+                Console.WriteLine($"Error importing Excel file: {ex.Message}");
+                return StatusCode(500, "Internal server error");
+            }
         }
     }
 }

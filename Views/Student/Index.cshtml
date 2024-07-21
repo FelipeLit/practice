@@ -1,4 +1,6 @@
-@model IEnumerable<practice2.Models.Student>
+@model IPagedList<practice2.Models.Student>
+@using X.PagedList.Mvc.Core
+@using X.PagedList
 
 @{
     ViewData["Title"] = "Lista de Estudiantes";
@@ -9,6 +11,14 @@
         <a asp-action="ExportToExcel" asp-controller="Student" class="btn btn-primary mt-3 mb-3">Exportar a excel</a>
     </div>
 </div>
+
+<form asp-action="ImportFromExcel" asp-controller="Student" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="file">Seleccionar archivo Excel</label>
+        <input type="file" class="form-control" id="file" name="file" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Importar</button>
+</form>
 
 
 <h1>Lista de Estudiantes</h1>
@@ -38,3 +48,7 @@
     }
     </tbody>
 </table>
+
+<div class="pagination">
+    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+</div>
